@@ -3,25 +3,23 @@ import requests
 import json
 from bs4 import BeautifulSoup
 import firebase_admin
-from firebase_admin import credentials, db
+from firebase_admin import credentials, db, messaging
 
 # Firebase Config
-FCM_SERVER_KEY = os.getenv("FCM_SERVER_KEY")  # Load from GitHub Secrets
 FCM_TOPIC = "/topics/free_games"
 FREE_GAMES_URL = "https://gg.deals/deals/?dealsExpiryDate=within2Weeks&maxPrice=0&minRating=0&sort=title&store=4,5,10,38,57&type=1,3"
 
-# Save Firebase credentials from environment variable
-firebase_json = os.getenv("FIREBASE_CREDENTIALS_JSON")
-if firebase_json:
-    with open("firebase_credentials.json", "w") as f:
-        f.write(firebase_json)
+# Load Firebase credentials from GitHub Secrets
+firebase_credentials_json = os.getenv("FIREBASE_CREDENTIALS_JSON")
 
-# Initialize Firebase
-if not firebase_admin._apps:
-    cred = credentials.Certificate("firebase_credentials.json")
+if firebase_credentials_json:
+    cred_dict = json.loads(firebase_credentials_json)
+    cred = credentials.Certificate(cred_dict)
     firebase_admin.initialize_app(cred, {
-        'databaseURL': 'https://testing-push-notificatio-3a0b4-default-rtdb.europe-west1.firebasedatabase.app'
+        'databaseURL': 'https://testing-push-notificatio-3a0b4-default-rtdb.europe-west1.firebasedatabase.app'  # Replace with your database URL
     })
+else:
+    raise ValueError("Firebase credentials not found in environment variables.")
 
 def fetch_latest_game():
     response = requests.get(FREE_GAMES_URL)
@@ -32,16 +30,43 @@ def fetch_latest_game():
         return game_titles if game_titles else []
     return []
 
-def insert_game_titles_to_firebase(game_titles):
+def compare_free_games(game_titles):
     ref = db.reference('games')
-    for title in game_titles:
-        ref.push(title)
-    print("Game titles inserted into Firebase Realtime Database.")
+
+    existing_games = ref.get()
+    existing_games_set = set(existing_games.values()) if existing_games else set()
+    new_games_set = set(game_titles)
+
+    new_games_to_push = new_games_set - existing_games_set
+
+    if new_games_to_push:
+        for title in new_games_to_push:
+            ref.push(title)
+            send_fcm_notification(title)
+        print(f"Added {len(new_games_to_push)} new game(s) to Firebase.")
+    else:
+        print("No new games to update.")
+
+def send_fcm_notification(game_name):
+    message = messaging.Message(
+        topic="free_games",
+        notification=messaging.Notification(
+            title="New Free Game Available! 🎮",
+            body=f"{game_name} is now free! Check it out!"
+        ),
+        data={
+            "game_name": game_name,
+            "click_action": "OPEN_GAME_PAGE"
+        }
+    )
+
+    response = messaging.send(message)
+    print(f"✅ Notification sent: {game_name} (Message ID: {response})")
 
 def main():
     game_titles = fetch_latest_game()
     if game_titles:
-        insert_game_titles_to_firebase(game_titles)
+        compare_free_games(game_titles)
     else:
         print("No new free games found.")
 
