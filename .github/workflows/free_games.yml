@@ -2,8 +2,8 @@ name: Fetch Free Games
 
 on:
   schedule:
-    - cron: "0 12 * * *"  # Runs daily at 12:00 UTC
-  workflow_dispatch:  # Allows manual execution
+    - cron: "20 6 * * *"
+  workflow_dispatch: # Allows manual execution
 
 jobs:
   fetch_games:
