@@ -11,12 +11,13 @@ FREE_GAMES_URL = "https://gg.deals/deals/?dealsExpiryDate=within2Weeks&maxPrice=
 
 # Load Firebase credentials from GitHub Secrets
 firebase_credentials_json = os.getenv("FIREBASE_CREDENTIALS_JSON")
+DATABASE_URL = os.getenv("DATABASE_URL")
 
 if firebase_credentials_json:
     cred_dict = json.loads(firebase_credentials_json)
     cred = credentials.Certificate(cred_dict)
     firebase_admin.initialize_app(cred, {
-        'databaseURL': 'https://game-orb-default-rtdb.europe-west1.firebasedatabase.app/'  # Replace with your database URL
+        'databaseURL': DATABASE_URL  # Replace with your database URL
     })
 else:
     raise ValueError("Firebase credentials not found in environment variables.")
