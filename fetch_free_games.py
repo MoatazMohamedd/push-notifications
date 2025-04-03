@@ -16,7 +16,7 @@ if firebase_credentials_json:
     cred_dict = json.loads(firebase_credentials_json)
     cred = credentials.Certificate(cred_dict)
     firebase_admin.initialize_app(cred, {
-        'databaseURL': 'https://testing-push-notificatio-3a0b4-default-rtdb.europe-west1.firebasedatabase.app'  # Replace with your database URL
+        'databaseURL': 'https://game-orb-default-rtdb.europe-west1.firebasedatabase.app/'  # Replace with your database URL
     })
 else:
     raise ValueError("Firebase credentials not found in environment variables.")
