@@ -24,4 +24,6 @@ jobs:
       - name: Run Free Games Scraper
         env:
           FIREBASE_CREDENTIALS_JSON: ${{ secrets.FIREBASE_CREDENTIALS_JSON }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+
         run: python fetch_free_games.py
