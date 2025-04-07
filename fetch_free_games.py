@@ -52,8 +52,8 @@ def send_fcm_notification(game_name):
     message = messaging.Message(
         topic="free_games",
         notification=messaging.Notification(
-            title="New Free Game Available! 🎮",
-            body=f"{game_name} is now free! Check it out!"
+            title="FREE GAME ALERT 🎮",
+            body=f"{game_name} is FREE right now, grab it before the deal disappears!"
         ),
         data={
             "game_name": game_name,
