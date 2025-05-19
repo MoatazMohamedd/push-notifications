@@ -7,7 +7,7 @@ from firebase_admin import credentials, db, messaging
 
 # Firebase Config
 FCM_TOPIC = "/topics/free_games"
-FREE_GAMES_URL = "https://gg.deals/deals/?dealsExpiryDate=within2Weeks&maxPrice=0&minRating=0&sort=title&store=4,5,10,38,57&type=1,3"
+FREE_GAMES_URL = "https://gg.deals/deals/?maxPrice=0&minDiscount=100&minRating=0&sort=title&store=4,5,10,38,54,57,109,1169&type=1,3"
 
 # Load Firebase credentials from GitHub Secrets
 firebase_credentials_json = os.getenv("FIREBASE_CREDENTIALS_JSON")
