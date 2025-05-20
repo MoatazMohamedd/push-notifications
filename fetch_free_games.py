@@ -2,7 +2,6 @@ import os
 import requests
 import json
 from bs4 import BeautifulSoup
-from datetime import datetime, timezone
 import firebase_admin
 from firebase_admin import credentials, db, messaging
 
@@ -10,6 +9,7 @@ from firebase_admin import credentials, db, messaging
 FCM_TOPIC = "/topics/free_games"
 FREE_GAMES_URL = "https://gg.deals/deals/?maxPrice=0&minDiscount=100&minRating=0&sort=title&store=4,5,10,38,54,57,109,1169&type=1,3"
 
+# Load Firebase credentials from GitHub Secrets
 firebase_credentials_json = os.getenv("FIREBASE_CREDENTIALS_JSON")
 DATABASE_URL = os.getenv("DATABASE_URL")
 
@@ -17,78 +17,36 @@ if firebase_credentials_json:
     cred_dict = json.loads(firebase_credentials_json)
     cred = credentials.Certificate(cred_dict)
     firebase_admin.initialize_app(cred, {
-        'databaseURL': DATABASE_URL
+        'databaseURL': DATABASE_URL  # Replace with your database URL
     })
 else:
     raise ValueError("Firebase credentials not found in environment variables.")
 
-def fetch_latest_games():
+def fetch_latest_game():
     response = requests.get(FREE_GAMES_URL)
     if response.status_code == 200:
         soup = BeautifulSoup(response.content, 'html.parser')
-        game_elements = soup.find_all(class_='game-info-title-wrapper')
-
-        games = []
-        for game_el in game_elements:
-            title = game_el.get_text(strip=True)
-
-            wrapper = game_el.find_parent('div', class_='game-info-row')
-            expiry_timestamp = None
-
-            # Safe expiry check: only get timestamp if parent div has class "time-tag tag"
-            if wrapper:
-                time_tag_wrapper = wrapper.find('div', class_='time-tag tag')
-                if time_tag_wrapper:
-                    expiry_span = time_tag_wrapper.find('span', class_='expiry label')
-                    if expiry_span:
-                        time_tag = expiry_span.find('time')
-                        if time_tag and time_tag.has_attr('data-timestamp'):
-                            expiry_timestamp = int(time_tag['data-timestamp'])
-
-            games.append({
-                'title': title,
-                'expires_at': expiry_timestamp
-            })
-
-        return games
+        free_games = soup.find_all(class_='game-info-title-wrapper')
+        game_titles = [game.get_text(strip=True) for game in free_games]
+        return game_titles if game_titles else []
     return []
 
-
-
-def compare_and_notify(games):
+def compare_free_games(game_titles):
     ref = db.reference('games')
-    last_chance_ref = db.reference('last_chance_sent')
 
     existing_games = ref.get()
-    existing_titles = set(existing_games.values()) if existing_games else set()
+    existing_games_set = set(existing_games.values()) if existing_games else set()
+    new_games_set = set(game_titles)
 
-    now_ts = int(datetime.now(timezone.utc).timestamp())
-    new_titles = set()
+    new_games_to_push = new_games_set - existing_games_set
 
-    for game in games:
-        title = game['title']
-        expires_at = game['expires_at']
-
-        # Handle new games
-        if title not in existing_titles:
+    if new_games_to_push:
+        for title in new_games_to_push:
             ref.push(title)
-           # send_fcm_notification(title)
-            new_titles.add(title)
-            print("Expires at {expires_at}")
-
-        # Handle "last chance" alert
-        if expires_at:
-            hours_left = (expires_at - now_ts) / 3600
-            if hours_left <= 48:
-                already_notified = last_chance_ref.child(title).get()
-                send_last_chance_notification(title, int(hours_left))
-
-           
-
-    if new_titles:
-        print(f"✅ Added {len(new_titles)} new game(s) to Firebase.")
+            send_fcm_notification(title)
+        print(f"Added {len(new_games_to_push)} new game(s) to Firebase.")
     else:
-        print("ℹ️ No new games to update.")
+        print("No new games to update.")
 
 def send_fcm_notification(game_name):
     message = messaging.Message(
@@ -102,31 +60,16 @@ def send_fcm_notification(game_name):
             "click_action": "OPEN_GAME_PAGE"
         }
     )
-    response = messaging.send(message)
-    print(f"🚀 Notification sent: {game_name} (Message ID: {response})")
 
-def send_last_chance_notification(game_name, hours_left):
-    message = messaging.Message(
-        topic="free_games",
-        notification=messaging.Notification(
-            title="⏰ Last Chance!",
-            body=f"Only {int(hours_left)} hour(s) left to claim {game_name} for FREE!"
-        ),
-        data={
-            "game_name": game_name,
-            "click_action": "OPEN_GAME_PAGE",
-            "alert_type": "last_chance"
-        }
-    )
     response = messaging.send(message)
-    print(f"⚠️ Last chance notification sent: {game_name} (Message ID: {response})")
+    print(f"✅ Notification sent: {game_name} (Message ID: {response})")
 
 def main():
-    games = fetch_latest_games()
-    if games:
-        compare_and_notify(games)
+    game_titles = fetch_latest_game()
+    if game_titles:
+        compare_free_games(game_titles)
     else:
-        print("No free games found.")
+        print("No new free games found.")
 
 if __name__ == "__main__":
     main()
