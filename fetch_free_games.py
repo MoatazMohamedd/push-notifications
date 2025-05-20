@@ -35,13 +35,15 @@ def fetch_latest_games():
             wrapper = game_el.find_parent('div', class_='game-info-row')
             expiry_timestamp = None
 
-            # Look for expiration only inside the correct tag
+            # Safe expiry check: only get timestamp if parent div has class "time-tag tag"
             if wrapper:
-                expiry_container = wrapper.find('div', class_='time-tag tag')
-                if expiry_container:
-                    time_tag = expiry_container.find('time')
-                    if time_tag and time_tag.has_attr('data-timestamp'):
-                        expiry_timestamp = int(time_tag['data-timestamp'])
+                time_tag_wrapper = wrapper.find('div', class_='time-tag tag')
+                if time_tag_wrapper:
+                    expiry_span = time_tag_wrapper.find('span', class_='expiry label')
+                    if expiry_span:
+                        time_tag = expiry_span.find('time')
+                        if time_tag and time_tag.has_attr('data-timestamp'):
+                            expiry_timestamp = int(time_tag['data-timestamp'])
 
             games.append({
                 'title': title,
@@ -50,6 +52,7 @@ def fetch_latest_games():
 
         return games
     return []
+
 
 
 def compare_and_notify(games):
