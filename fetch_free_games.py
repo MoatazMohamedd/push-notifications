@@ -71,6 +71,7 @@ def compare_and_notify(games):
             ref.push(title)
            # send_fcm_notification(title)
             new_titles.add(title)
+            print("Expires at {expires_at}")
 
         # Handle "last chance" alert
         if expires_at:
