@@ -77,9 +77,9 @@ def compare_and_notify(games):
             hours_left = (expires_at - now_ts) / 3600
             if hours_left <= 48:
                 already_notified = last_chance_ref.child(title).get()
-                if not already_notified:
-                    send_last_chance_notification(title, int(hours_left))
-                    last_chance_ref.child(title).set(True)
+                send_last_chance_notification(title, int(hours_left))
+
+           
 
     if new_titles:
         print(f"✅ Added {len(new_titles)} new game(s) to Firebase.")
