@@ -69,7 +69,6 @@ def fetch_free_games_from_api():
                         'title': title,
                         'normalPrice': deal['normalPrice'],
                         'store': STORE_ID_NAME_MAP[store_id],
-                        'dealID': deal['dealID']
                     }
             return free_games
         else:
@@ -89,24 +88,29 @@ def sync_with_firebase(api_games_dict):
     if existing_data:
         for key, value in existing_data.items():
             if isinstance(value, dict) and 'title' in value:
-                existing_titles_map[value['title']] = key
+                existing_titles_map[value['title'].strip().lower()] = key  # Convert to lowercase
 
-    api_titles = set(api_games_dict.keys())
-    firebase_titles = set(existing_titles_map.keys())
+    # Also lowercase API titles for matching
+    api_titles_lower_map = {title.strip().lower(): title for title in api_games_dict.keys()}
+    api_titles_lower = set(api_titles_lower_map.keys())
+    firebase_titles_lower = set(existing_titles_map.keys())
 
-    new_titles = api_titles - firebase_titles
-    for title in new_titles:
-        game = api_games_dict[title]
+    # Titles to add
+    new_titles_lower = api_titles_lower - firebase_titles_lower
+    for lower_title in new_titles_lower:
+        original_title = api_titles_lower_map[lower_title]
+        game = api_games_dict[original_title]
         ref.push(game)
-       # send_fcm_notification(game)
-        print(f"✅ Added: {title} ({game['store']})")
+        # send_fcm_notification(game)
+        print(f"✅ Added: {game['title']} ({game['store']})")
         changes["added"] += 1
 
-    expired_titles = firebase_titles - api_titles
-    for title in expired_titles:
-        key_to_delete = existing_titles_map[title]
+    # Titles to remove
+    expired_titles_lower = firebase_titles_lower - api_titles_lower
+    for lower_title in expired_titles_lower:
+        key_to_delete = existing_titles_map[lower_title]
         ref.child(key_to_delete).delete()
-        print(f"❌ Removed: {title}")
+        print(f"❌ Removed: {lower_title}")
         changes["removed"] += 1
 
     print(f"\n✔ Sync completed. Added: {changes['added']} | Removed: {changes['removed']}")
@@ -123,7 +127,6 @@ def send_fcm_notification(game):
             "game_name": game['title'],
             "normal_price": game['normalPrice'],
             "store": game['store'],
-            "deal_id": game['dealID'],
             "click_action": "OPEN_GAME_PAGE"
         }
     )
