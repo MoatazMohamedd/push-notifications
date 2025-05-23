@@ -101,7 +101,7 @@ def sync_with_firebase(api_games_dict):
         original_title = api_titles_lower_map[lower_title]
         game = api_games_dict[original_title]
         ref.push(game)
-        # send_fcm_notification(game)
+        send_fcm_notification(game)
         print(f"✅ Added: {game['title']} ({game['store']})")
         changes["added"] += 1
 
@@ -121,7 +121,7 @@ def send_fcm_notification(game):
         topic="free_games",
         notification=messaging.Notification(
             title="FREE GAME ALERT 🎮",
-            body=f"{game['title']} (was ${game['normalPrice']}) is now FREE on {game['store']}!"
+            body=f"{game['title']} is now FREE on {game['store']}!"
         ),
         data={
             "game_name": game['title'],
