@@ -3,6 +3,8 @@ import requests
 import json
 import firebase_admin
 from firebase_admin import credentials, db, messaging
+import string
+import re
 
 # Firebase + API Config
 FCM_TOPIC = "/topics/free_games"
@@ -54,6 +56,18 @@ if firebase_credentials_json:
 else:
     raise ValueError("Firebase credentials not found in environment variables.")
 
+def normalize_title(title):
+    """
+    Normalize a game title for comparison:
+    - Lowercase
+    - Remove punctuation
+    - Collapse multiple spaces
+    """
+    title = title.lower()
+    title = re.sub(rf"[{re.escape(string.punctuation)}]", "", title)  # Remove punctuation
+    title = re.sub(r"\s+", " ", title)  # Collapse multiple spaces
+    return title.strip()
+
 
 def fetch_free_games_from_api():
     try:
@@ -88,29 +102,28 @@ def sync_with_firebase(api_games_dict):
     if existing_data:
         for key, value in existing_data.items():
             if isinstance(value, dict) and 'title' in value:
-                existing_titles_map[value['title'].strip().lower()] = key  # Convert to lowercase
+                normalized_existing_title = normalize_title(value['title'])
+                existing_titles_map[normalized_existing_title] = key
 
     # Also lowercase API titles for matching
-    api_titles_lower_map = {title.strip().lower(): title for title in api_games_dict.keys()}
-    api_titles_lower = set(api_titles_lower_map.keys())
+    api_titles_normalized_map = {normalize_title(title): title for title in api_games_dict.keys()}
+    api_titles_normalized = set(api_titles_normalized_map.keys())
     firebase_titles_lower = set(existing_titles_map.keys())
 
-    # Titles to add
-    new_titles_lower = api_titles_lower - firebase_titles_lower
-    for lower_title in new_titles_lower:
-        original_title = api_titles_lower_map[lower_title]
+    new_titles_normalized = api_titles_normalized - firebase_titles_lower
+    for normalized_title in new_titles_normalized:
+        original_title = api_titles_normalized_map[normalized_title]
         game = api_games_dict[original_title]
         ref.push(game)
         send_fcm_notification(game)
         print(f"✅ Added: {game['title']} ({game['store']})")
         changes["added"] += 1
 
-    # Titles to remove
-    expired_titles_lower = firebase_titles_lower - api_titles_lower
-    for lower_title in expired_titles_lower:
-        key_to_delete = existing_titles_map[lower_title]
+    expired_titles_normalized = firebase_titles_lower - api_titles_normalized
+    for normalized_title in expired_titles_normalized:
+        key_to_delete = existing_titles_map[normalized_title]
         ref.child(key_to_delete).delete()
-        print(f"❌ Removed: {lower_title}")
+        print(f"❌ Removed: {normalized_title}")
         changes["removed"] += 1
 
     print(f"\n✔ Sync completed. Added: {changes['added']} | Removed: {changes['removed']}")
