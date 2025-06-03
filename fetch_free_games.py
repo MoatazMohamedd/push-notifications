@@ -103,9 +103,11 @@ def sync_with_firebase(api_games_dict):
         for key, value in existing_data.items():
             if isinstance(value, dict) and 'title' in value:
                 normalized_existing_title = normalize_title(value['title'])
-                existing_titles_map[normalized_existing_title] = key
+                existing_titles_map[normalized_existing_title] = {
+                    "key": key,
+                    "manual": value.get("manual", False)
+                }
 
-    # Also lowercase API titles for matching
     api_titles_normalized_map = {normalize_title(title): title for title in api_games_dict.keys()}
     api_titles_normalized = set(api_titles_normalized_map.keys())
     firebase_titles_lower = set(existing_titles_map.keys())
@@ -121,13 +123,15 @@ def sync_with_firebase(api_games_dict):
 
     expired_titles_normalized = firebase_titles_lower - api_titles_normalized
     for normalized_title in expired_titles_normalized:
-        key_to_delete = existing_titles_map[normalized_title]
-        ref.child(key_to_delete).delete()
+        entry = existing_titles_map[normalized_title]
+        if entry["manual"]:
+            print(f"⏭ Skipped manual game: {normalized_title}")
+            continue
+        ref.child(entry["key"]).delete()
         print(f"❌ Removed: {normalized_title}")
         changes["removed"] += 1
 
     print(f"\n✔ Sync completed. Added: {changes['added']} | Removed: {changes['removed']}")
-
 
 def send_fcm_notification(game):
     message = messaging.Message(
