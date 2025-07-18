@@ -8,39 +8,7 @@ import re
 
 # Firebase + API Config
 FCM_TOPIC = "/topics/free_games"
-CHEAPSHARK_API = "https://www.cheapshark.com/api/1.0/deals?upperPrice=0"
 
-# Hardcoded Store IDs you're interested in
-STORE_ID_NAME_MAP = {
-    "1": "Steam",
-    "2": "GamersGate",
-    "3": "GreenManGaming",
-    "4": "Amazon",
-    "5": "GameStop",
-    "6": "Direct2Drive",
-    "7": "GoG",
-    "8": "Origin",
-    "9": "Get Games",
-    "10": "ShinyLoot",
-    "11": "Humble Store",
-    "12": "Desura",
-    "13": "Uplay",
-    "14": "IndieGameStand",
-    "15": "Fanatical",
-    "16": "Gamesrocket",
-    "17": "Games Republic",
-    "18": "SilaGames",
-    "19": "Playfield",
-    "20": "ImperialGames",
-    "21": "WinGameStore",
-    "22": "FunStockDigital",
-    "23": "GameBillet",
-    "24": "Voidu",
-    "25": "Epic Games Store"
-}
-
-# Only keep games from these store IDs
-ALLOWED_STORE_IDS = {"1", "7", "8", "13", "25"}  # Steam, GoG, Origin, Uplay, Epic Games Store
 
 
 # Load Firebase credentials from GitHub Secrets
@@ -70,20 +38,50 @@ def normalize_title(title):
 
 
 def fetch_free_games_from_api():
+    GAMERPOWER_API = "https://www.gamerpower.com/api/filter?platform=epic-games-store.steam.gog.origin&type=game&sort-by=date"
     try:
-        response = requests.get(CHEAPSHARK_API)
+        response = requests.get(GAMERPOWER_API)
         if response.status_code == 200:
-            deals = response.json()
+            offers = response.json()
             free_games = {}
-            for deal in deals:
-                store_id = deal['storeID']
-                if store_id in ALLOWED_STORE_IDS and float(deal['normalPrice']) > 0 and float(deal['salePrice']) == 0:
-                    title = deal['title'].strip()
-                    free_games[title] = {
-                        'title': title,
-                        'normalPrice': deal['normalPrice'],
-                        'store': STORE_ID_NAME_MAP[store_id],
-                    }
+            for offer in offers:
+                raw_title = offer['title'].strip()
+                
+                # Extract clean title
+                # Remove store in brackets and 'Giveaway'
+                clean_title = re.sub(r'\s*\(.*?\)', '', raw_title)
+                clean_title = re.sub(r'\s*Giveaway', '', clean_title)
+                clean_title = clean_title.strip()
+                
+                # Extract store name: either from brackets in title or platforms field
+                store = "Unknown"
+                match = re.search(r'\((.*?)\)', raw_title)
+                if match:
+                    store = match.group(1).strip()
+                else:
+                    platforms = offer.get('platforms', '')
+                    if "Steam" in platforms:
+                        store = "Steam"
+                    elif "Epic Games" in platforms:
+                        store = "Epic Games Store"
+                    elif "GoG" in platforms:
+                        store = "GoG"
+                    elif "Origin" in platforms:
+                        store = "Origin"
+
+                if store not in {"Steam", "Epic Games Store", "GoG", "Origin"}:
+                    continue
+
+                worth = offer.get('worth', '$0.00').replace('$', '').strip()
+                if not worth:
+                    worth = "0.00"
+
+                free_games[clean_title] = {
+                    'title': clean_title,
+                    'normalPrice': worth,
+                    'store': store,
+                }
+
             return free_games
         else:
             print(f"API error: {response.status_code}")
@@ -91,6 +89,7 @@ def fetch_free_games_from_api():
     except Exception as e:
         print(f"Exception: {e}")
         return {}
+
 
 
 def sync_with_firebase(api_games_dict):
@@ -105,13 +104,15 @@ def sync_with_firebase(api_games_dict):
                 normalized_existing_title = normalize_title(value['title'])
                 existing_titles_map[normalized_existing_title] = {
                     "key": key,
-                    "manual": value.get("manual", False)
+                    "manual": value.get("manual", False),
+                    "forceExpired": value.get("forceExpired", False)
                 }
 
     api_titles_normalized_map = {normalize_title(title): title for title in api_games_dict.keys()}
     api_titles_normalized = set(api_titles_normalized_map.keys())
     firebase_titles_lower = set(existing_titles_map.keys())
 
+    # Add new games
     new_titles_normalized = api_titles_normalized - firebase_titles_lower
     for normalized_title in new_titles_normalized:
         original_title = api_titles_normalized_map[normalized_title]
@@ -121,15 +122,22 @@ def sync_with_firebase(api_games_dict):
         print(f"✅ Added: {game['title']} ({game['store']})")
         changes["added"] += 1
 
-    expired_titles_normalized = firebase_titles_lower - api_titles_normalized
-    for normalized_title in expired_titles_normalized:
+    # Remove expired or forced expired
+    for normalized_title in firebase_titles_lower:
         entry = existing_titles_map[normalized_title]
-        if entry["manual"]:
-            print(f"⏭ Skipped manual game: {normalized_title}")
+
+        # If this title has forceExpired flag ➜ always delete it
+        if entry["forceExpired"]:
+            ref.child(entry["key"]).delete()
+            print(f"❌ Force-expired removed: {normalized_title}")
+            changes["removed"] += 1
             continue
-        ref.child(entry["key"]).delete()
-        print(f"❌ Removed: {normalized_title}")
-        changes["removed"] += 1
+
+        # If the title is not in API and not manual ➜ remove
+        if normalized_title not in api_titles_normalized and not entry["manual"]:
+            ref.child(entry["key"]).delete()
+            print(f"❌ Removed: {normalized_title}")
+            changes["removed"] += 1
 
     print(f"\n✔ Sync completed. Added: {changes['added']} | Removed: {changes['removed']}")
 
