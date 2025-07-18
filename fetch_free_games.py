@@ -46,13 +46,16 @@ def fetch_free_games_from_api():
             free_games = {}
             for offer in offers:
                 raw_title = offer['title'].strip()
-                
+
+                # ❌ Skip key giveaways
+                if "Key Giveaway" in raw_title:
+                    continue
+
                 # Extract clean title
-                # Remove store in brackets and 'Giveaway'
                 clean_title = re.sub(r'\s*\(.*?\)', '', raw_title)
                 clean_title = re.sub(r'\s*Giveaway', '', clean_title)
                 clean_title = clean_title.strip()
-                
+
                 # Extract store name: either from brackets in title or platforms field
                 store = "Unknown"
                 match = re.search(r'\((.*?)\)', raw_title)
@@ -89,57 +92,6 @@ def fetch_free_games_from_api():
     except Exception as e:
         print(f"Exception: {e}")
         return {}
-
-
-
-def sync_with_firebase(api_games_dict):
-    ref = db.reference('games')
-    existing_data = ref.get()
-    existing_titles_map = {}
-    changes = {"added": 0, "removed": 0}
-
-    if existing_data:
-        for key, value in existing_data.items():
-            if isinstance(value, dict) and 'title' in value:
-                normalized_existing_title = normalize_title(value['title'])
-                existing_titles_map[normalized_existing_title] = {
-                    "key": key,
-                    "manual": value.get("manual", False),
-                    "forceExpired": value.get("forceExpired", False)
-                }
-
-    api_titles_normalized_map = {normalize_title(title): title for title in api_games_dict.keys()}
-    api_titles_normalized = set(api_titles_normalized_map.keys())
-    firebase_titles_lower = set(existing_titles_map.keys())
-
-    # Add new games
-    new_titles_normalized = api_titles_normalized - firebase_titles_lower
-    for normalized_title in new_titles_normalized:
-        original_title = api_titles_normalized_map[normalized_title]
-        game = api_games_dict[original_title]
-        ref.push(game)
-        send_fcm_notification(game)
-        print(f"✅ Added: {game['title']} ({game['store']})")
-        changes["added"] += 1
-
-    # Remove expired or forced expired
-    for normalized_title in firebase_titles_lower:
-        entry = existing_titles_map[normalized_title]
-
-        # If this title has forceExpired flag ➜ always delete it
-        if entry["forceExpired"]:
-            ref.child(entry["key"]).delete()
-            print(f"❌ Force-expired removed: {normalized_title}")
-            changes["removed"] += 1
-            continue
-
-        # If the title is not in API and not manual ➜ remove
-        if normalized_title not in api_titles_normalized and not entry["manual"]:
-            ref.child(entry["key"]).delete()
-            print(f"❌ Removed: {normalized_title}")
-            changes["removed"] += 1
-
-    print(f"\n✔ Sync completed. Added: {changes['added']} | Removed: {changes['removed']}")
 
 def send_fcm_notification(game):
     message = messaging.Message(
