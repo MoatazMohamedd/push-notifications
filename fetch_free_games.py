@@ -9,6 +9,13 @@ import re
 # Firebase + API Config
 FCM_TOPIC = "/topics/free_games"
 
+# Titles you always want to skip (normalized!)
+BLOCKED_TITLES = [
+    "fantasy general ii",
+    "caribbean crashers",
+    "field of glory ii medieval",
+    "battlestar galactica deadlock"
+]
 
 
 # Load Firebase credentials from GitHub Secrets
@@ -55,6 +62,13 @@ def fetch_free_games_from_api():
                 clean_title = re.sub(r'\s*\(.*?\)', '', raw_title)
                 clean_title = re.sub(r'\s*Giveaway', '', clean_title)
                 clean_title = clean_title.strip()
+
+                    # ✅ Normalize for blocking check
+                normalized_clean_title = normalize_title(clean_title)
+
+                # ❌ Skip if in blocked list
+                if normalized_clean_title in BLOCKED_TITLES:
+                    continue
 
                 # Extract store name: either from brackets in title or platforms field
                 store = "Unknown"
