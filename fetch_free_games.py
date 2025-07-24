@@ -11,10 +11,7 @@ FCM_TOPIC = "/topics/free_games"
 
 # Titles you always want to skip (normalized!)
 BLOCKED_TITLES = [
-    "fantasy general ii",
-    "caribbean crashers",
-    "field of glory ii medieval",
-    "battlestar galactica deadlock"
+ 
 ]
 
 
@@ -75,6 +72,9 @@ def fetch_free_games_from_api():
                 match = re.search(r'\((.*?)\)', raw_title)
                 if match:
                     store = match.group(1).strip()
+                    if store == "Epic Games":
+                        store = "Epic Games Store"
+
                 else:
                     platforms = offer.get('platforms', '')
                     if "Steam" in platforms:
