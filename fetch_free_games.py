@@ -178,6 +178,68 @@ def send_fcm_notification(game):
     except Exception as e:
         print(f"❌ Notification failed: {e}")
 
+def fetch_secret_free_games():
+    SECRET_API = "https://www.gamerpower.com/api/filter?platform=drm-free&type=game"
+    try:
+        response = requests.get(SECRET_API)
+        if response.status_code == 200:
+            offers = response.json()
+            secret_games = {}
+
+            for offer in offers:
+                game_id = offer.get('id')
+                if not game_id:
+                    continue  # Skip if no ID, just in case
+
+                end_date = offer.get('end_date', 'N/A').strip()
+                open_url = offer.get('open_giveaway_url') or offer.get('open_giveaway') or ""
+
+                secret_games[str(game_id)] = {
+                    'id': game_id,
+                    'endDate': end_date,
+                    'openGiveawayUrl': open_url
+                }
+
+            return secret_games
+        else:
+            print(f"API error: {response.status_code}")
+            return {}
+    except Exception as e:
+        print(f"Exception: {e}")
+        return {}
+    
+def sync_secret_freebies(api_secret_games):
+    ref = db.reference('secret_freebies')
+    existing_data = ref.get()
+    existing_ids = set()
+    changes = {"added": 0, "removed": 0}
+
+    if existing_data:
+        for key, value in existing_data.items():
+            if isinstance(value, dict) and 'id' in value:
+                existing_ids.add(str(value['id']))
+
+    api_ids = set(api_secret_games.keys())
+
+    # Add new
+    new_ids = api_ids - existing_ids
+    for game_id in new_ids:
+        game = api_secret_games[game_id]
+        ref.push(game)
+        print(f"✅ Secret Added: {game['id']}")
+        changes["added"] += 1
+
+    # Remove missing
+    for key, value in existing_data.items():
+        if isinstance(value, dict) and 'id' in value:
+            if str(value['id']) not in api_ids:
+                ref.child(key).delete()
+                print(f"❌ Secret Removed: {value['id']}")
+                changes["removed"] += 1
+
+    print(f"\n✔ Secret Sync completed. Added: {changes['added']} | Removed: {changes['removed']}")
+
+
 
 def main():
     api_games = fetch_free_games_from_api()
@@ -186,6 +248,11 @@ def main():
     else:
         print("⚠ No valid free games found.")
 
+    api_secret_games = fetch_secret_free_games()
+    if api_secret_games:
+        sync_secret_freebies(api_secret_games)
+    else:
+        print("⚠ No secret freebies found.")
 
 if __name__ == "__main__":
     main()
