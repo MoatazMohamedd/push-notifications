@@ -135,7 +135,7 @@ def sync_with_firebase(api_games_dict):
         original_title = api_titles_normalized_map[normalized_title]
         game = api_games_dict[original_title]
         ref.push(game)
-        send_fcm_notification(game)
+      #  send_fcm_notification(game)
         print(f"✅ Added: {game['title']} ({game['store']})")
         changes["added"] += 1
 
