@@ -1,0 +1,29 @@
+name: Fetch Free Games
+
+on:
+  schedule:
+    - cron: "0 * * * *"
+  workflow_dispatch: # Allows manual execution
+
+jobs:
+  fetch_games:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.10"
+
+      - name: Install Dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run Free Games Scraper
+        env:
+          FIREBASE_CREDENTIALS_JSON: ${{ secrets.FIREBASE_CREDENTIALS_JSON }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+
+        run: python fetch_free_games.py
