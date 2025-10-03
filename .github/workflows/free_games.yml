@@ -1,29 +1,39 @@
-name: Fetch Free Games
+name: Update Freebies
 
 on:
   schedule:
-    - cron: "0 * * * *"
-  workflow_dispatch: # Allows manual execution
+    - cron: "0 * * * *" # every hour
+  workflow_dispatch:
+
+permissions:
+  contents: write # ✅ allow pushing changes
 
 jobs:
-  fetch_games:
+  update:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v3
 
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: "3.10"
 
-      - name: Install Dependencies
+      - name: Install dependencies
         run: pip install -r requirements.txt
 
-      - name: Run Free Games Scraper
+      - name: Run update script
         env:
+          IGDB_CLIENT_ID: ${{ secrets.IGDB_CLIENT_ID }}
+          IGDB_ACCESS_TOKEN: ${{ secrets.IGDB_ACCESS_TOKEN }}
           FIREBASE_CREDENTIALS_JSON: ${{ secrets.FIREBASE_CREDENTIALS_JSON }}
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          FIRESTORE_PROJECT_ID: ${{ secrets.FIRESTORE_PROJECT_ID }}
+        run: python update_freebies.py
 
-        run: python fetch_free_games.py
+      - name: Commit updated freebies.json
+        run: |
+          git config --global user.name "github-actions"
+          git config --global user.email "github-actions@github.com"
+          git add freebies.json
+          git commit -m "Update freebies.json [skip ci]" || echo "No changes to commit"
+          git push
