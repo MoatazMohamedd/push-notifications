@@ -28,7 +28,7 @@ jobs:
           IGDB_ACCESS_TOKEN: ${{ secrets.IGDB_ACCESS_TOKEN }}
           FIREBASE_CREDENTIALS_JSON: ${{ secrets.FIREBASE_CREDENTIALS_JSON }}
           FIRESTORE_PROJECT_ID: ${{ secrets.FIRESTORE_PROJECT_ID }}
-        run: python update_freebies.py
+        run: python fetch_free_games.py
 
       - name: Commit updated freebies.json
         run: |
