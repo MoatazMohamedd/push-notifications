@@ -1,1 +1,23 @@
-[]
+[
+  {
+    "gamerpower_id": 3318,
+    "title": "Gravity Circuit",
+    "worth": "16.99",
+    "store": "Epic Games Store",
+    "expiry_date": "2025-10-16 23:59:00"
+  },
+  {
+    "gamerpower_id": 3305,
+    "title": "Train Sim World 6: Free Starter Pack",
+    "worth": "N/A",
+    "store": "Steam",
+    "expiry_date": "2025-11-11 23:59:00"
+  },
+  {
+    "gamerpower_id": 3293,
+    "title": "DungeonLoot: Open Beta Has Arrived!",
+    "worth": "N/A",
+    "store": "Steam",
+    "expiry_date": "N/A"
+  }
+]
