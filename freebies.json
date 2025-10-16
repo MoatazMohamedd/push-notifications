@@ -1,5 +1,19 @@
 [
   {
+    "gamerpower_id": 3326,
+    "title": "Amnesia: The Bunker",
+    "worth": "24.99",
+    "store": "Epic Games Store",
+    "expiry_date": "2025-10-23 23:59:00"
+  },
+  {
+    "gamerpower_id": 3325,
+    "title": "Samorost 3",
+    "worth": "19.99",
+    "store": "Epic Games Store",
+    "expiry_date": "2025-10-23 23:59:00"
+  },
+  {
     "gamerpower_id": 3318,
     "title": "Gravity Circuit",
     "worth": "16.99",
