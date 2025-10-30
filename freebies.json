@@ -1,5 +1,19 @@
 [
   {
+    "gamerpower_id": 3342,
+    "title": "Five Nights at Freddy's: Into the Pit",
+    "worth": "19.99",
+    "store": "Epic Games Store",
+    "expiry_date": "2025-11-06 23:59:00"
+  },
+  {
+    "gamerpower_id": 3341,
+    "title": "Bendy and the Ink Machine",
+    "worth": "19.99",
+    "store": "Epic Games Store",
+    "expiry_date": "2025-11-06 23:59:00"
+  },
+  {
     "gamerpower_id": 3339,
     "title": "Space Pilgrim Episode III: Delta Pavonis",
     "worth": "1.99",
