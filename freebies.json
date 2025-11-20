@@ -1,31 +1,24 @@
 [
   {
+    "gamerpower_id": 3377,
+    "title": "Zoeti",
+    "worth": "19.99",
+    "store": "Epic Games Store",
+    "expiry_date": "2025-11-27 23:59:00"
+  },
+  {
+    "gamerpower_id": 3376,
+    "title": "Godzilla Voxel Wars",
+    "worth": "14.99",
+    "store": "Epic Games Store",
+    "expiry_date": "2025-11-27 23:59:00"
+  },
+  {
     "gamerpower_id": 3375,
     "title": "Wednesdays",
     "worth": "9.99",
     "store": "Steam",
     "expiry_date": "2025-11-21 23:59:00"
-  },
-  {
-    "gamerpower_id": 3369,
-    "title": "Zero Hour",
-    "worth": "9.99",
-    "store": "Epic Games Store",
-    "expiry_date": "2025-11-20 23:59:00"
-  },
-  {
-    "gamerpower_id": 3368,
-    "title": "Songs of Silence",
-    "worth": "29.99",
-    "store": "Epic Games Store",
-    "expiry_date": "2025-11-20 23:59:00"
-  },
-  {
-    "gamerpower_id": 3367,
-    "title": "ScourgeBringer",
-    "worth": "16.99",
-    "store": "Epic Games Store",
-    "expiry_date": "2025-11-20 23:59:00"
   },
   {
     "gamerpower_id": 3293,
