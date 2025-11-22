@@ -1,1 +1,30 @@
-[]
+[
+  {
+    "gamerpower_id": 2019,
+    "title": "Warhammer: Vermintide 2",
+    "worth": "29.99",
+    "store": "Steam",
+    "expiry_date": "2025-11-23 23:59:00"
+  },
+  {
+    "gamerpower_id": 3377,
+    "title": "Zoeti",
+    "worth": "19.99",
+    "store": "Epic Games Store",
+    "expiry_date": "2025-11-27 23:59:00"
+  },
+  {
+    "gamerpower_id": 3376,
+    "title": "Godzilla Voxel Wars",
+    "worth": "14.99",
+    "store": "Epic Games Store",
+    "expiry_date": "2025-11-27 23:59:00"
+  },
+  {
+    "gamerpower_id": 3293,
+    "title": "DungeonLoot: Open Beta Has Arrived!",
+    "worth": "N/A",
+    "store": "Steam",
+    "expiry_date": "N/A"
+  }
+]
