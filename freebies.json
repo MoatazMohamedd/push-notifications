@@ -1,10 +1,17 @@
 [
   {
-    "gamerpower_id": 3384,
-    "title": "Universe For Sale",
+    "gamerpower_id": 3396,
+    "title": "Jackbox Party Pack 4",
+    "worth": "24.99",
+    "store": "Epic Games Store",
+    "expiry_date": "2025-12-11 23:59:00"
+  },
+  {
+    "gamerpower_id": 3395,
+    "title": "The Darkside Detective",
     "worth": "14.99",
     "store": "Epic Games Store",
-    "expiry_date": "2025-12-04 23:59:00"
+    "expiry_date": "2025-12-11 23:59:00"
   },
   {
     "gamerpower_id": 3293,
