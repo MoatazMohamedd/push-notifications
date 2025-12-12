@@ -1,5 +1,12 @@
 [
   {
+    "gamerpower_id": 3402,
+    "title": "Hogwarts Legacy",
+    "worth": "59.99",
+    "store": "Epic Games Store",
+    "expiry_date": "2025-12-18 23:59:00"
+  },
+  {
     "gamerpower_id": 722,
     "title": "Black Desert",
     "worth": "9.99",
